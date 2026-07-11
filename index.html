@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>외국인 순매수·순매도 TOP 10</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f1117;
+      --card: #171a23;
+      --line: #2a2f3c;
+      --text: #f4f6fb;
+      --muted: #a8afbf;
+      --buy: rgba(239, 83, 80, 0.82);
+      --sell: rgba(66, 133, 244, 0.82);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                   sans-serif;
+    }
+
+    .wrap {
+      width: min(1180px, calc(100% - 28px));
+      margin: 28px auto;
+    }
+
+    header {
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(24px, 4vw, 38px);
+    }
+
+    .sub {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      min-width: 0;
+    }
+
+    .card h2 {
+      margin: 0 0 14px;
+      font-size: 20px;
+    }
+
+    .chart-box {
+      position: relative;
+      height: 430px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 14px;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 9px 6px;
+      border-top: 1px solid var(--line);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child, td:first-child,
+    th:nth-child(2), td:nth-child(2) {
+      text-align: left;
+    }
+
+    .error {
+      display: none;
+      padding: 16px;
+      border: 1px solid #8f3c3c;
+      background: #311c21;
+      border-radius: 12px;
+      line-height: 1.7;
+    }
+
+    footer {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 820px) {
+      .grid { grid-template-columns: 1fr; }
+      .chart-box { height: 390px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>외국인 순매수·순매도 TOP 10</h1>
+      <div class="sub">
+        네이버 증권 데이터를 GitHub Actions가 자동으로 갱신합니다.<br>
+        마지막 갱신: <strong id="updated">불러오는 중…</strong>
+      </div>
+    </header>
+
+    <div id="error" class="error"></div>
+
+    <section class="grid" id="dashboard">
+      <article class="card">
+        <h2>외국인 순매수 TOP 10</h2>
+        <div class="chart-box">
+          <canvas id="buyChart"></canvas>
+        </div>
+        <div id="buyTable"></div>
+      </article>
+
+      <article class="card">
+        <h2>외국인 순매도 TOP 10</h2>
+        <div class="chart-box">
+          <canvas id="sellChart"></canvas>
+        </div>
+        <div id="sellTable"></div>
+      </article>
+    </section>
+
+    <footer>
+      이 화면은 투자 참고용입니다. 원본 페이지의 지연·오류 또는 구조 변경으로
+      자동 갱신이 실패할 수 있습니다.
+    </footer>
+  </main>
+
+  <script>
+    const formatNumber = new Intl.NumberFormat("ko-KR");
+
+    function makeTable(items) {
+      const rows = items.map(item => `
+        <tr>
+          <td>${item.rank}</td>
+          <td>${item.name}</td>
+          <td>${item.code || "-"}</td>
+          <td>${formatNumber.format(item.amount)}</td>
+        </tr>
+      `).join("");
+
+      return `
+        <table>
+          <thead>
+            <tr>
+              <th>순위</th>
+              <th>종목</th>
+              <th>코드</th>
+              <th>금액</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    function makeChart(canvasId, items, label, color) {
+      return new Chart(document.getElementById(canvasId), {
+        type: "bar",
+        data: {
+          labels: items.map(item => item.name),
+          datasets: [{
+            label,
+            data: items.map(item => item.amount),
+            backgroundColor: color,
+            borderWidth: 0,
+            borderRadius: 5
+          }]
+        },
+        options: {
+          indexAxis: "y",
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: context =>
+                  `${label}: ${formatNumber.format(context.raw)}`
+              }
+            }
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              grid: { color: "rgba(255,255,255,0.08)" },
+              ticks: {
+                color: "#a8afbf",
+                callback: value => formatNumber.format(value)
+              }
+            },
+            y: {
+              grid: { display: false },
+              ticks: { color: "#f4f6fb", autoSkip: false }
+            }
+          }
+        }
+      });
+    }
+
+    async function loadData() {
+      try {
+        const response = await fetch(`data.json?t=${Date.now()}`);
+
+        if (!response.ok) {
+          throw new Error("data.json을 불러오지 못했습니다.");
+        }
+
+        const data = await response.json();
+
+        if (!data.buy?.length || !data.sell?.length) {
+          throw new Error(
+            "아직 실제 데이터가 없습니다. GitHub Actions를 먼저 실행해 주세요."
+          );
+        }
+
+        document.getElementById("updated").textContent = data.updated_at;
+        document.getElementById("buyTable").innerHTML = makeTable(data.buy);
+        document.getElementById("sellTable").innerHTML = makeTable(data.sell);
+
+        makeChart(
+          "buyChart",
+          data.buy,
+          "순매수 금액",
+          "rgba(239, 83, 80, 0.82)"
+        );
+
+        makeChart(
+          "sellChart",
+          data.sell,
+          "순매도 금액",
+          "rgba(66, 133, 244, 0.82)"
+        );
+      } catch (error) {
+        document.getElementById("dashboard").style.display = "none";
+        const box = document.getElementById("error");
+        box.style.display = "block";
+        box.innerHTML = `
+          <strong>데이터를 표시하지 못했습니다.</strong><br>
+          ${error.message}<br><br>
+          저장소의 <b>Actions</b> 메뉴에서 자동 실행이 성공했는지 확인해 주세요.
+        `;
+        document.getElementById("updated").textContent = "갱신 필요";
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
