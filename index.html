@@ -295,7 +295,7 @@
     function cleanStockName(name) {
       return String(name ?? "")
         .replace(
-          /^\s*관심종목\s*추가(?:\s*\([^)]*\))?\s*/u,
+          /^\s*관심종목(?:에)?\s*추가(?:\s*\([^)]*\))?\s*(?:\d+\s*)?/u,
           ""
         )
         .trim();
