@@ -1,176 +1,254 @@
 import json
 import re
+import shutil
+import time
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-import requests
 from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
 
 
-URL = "https://finance.naver.com/sise/sise_deal_rank.naver"
+PAGE_URL = (
+    "https://stock.naver.com/market/stock/kr/trend/foreigner"
+    "?marketType=kospi&periodType=segment-1day&tradeType=0"
+)
 OUTPUT = Path("data.json")
 KST = ZoneInfo("Asia/Seoul")
 
 
-def number(text: str):
-    """'1,234' 같은 글자를 숫자로 바꿉니다."""
-    cleaned = re.sub(r"[^0-9.-]", "", text.replace(",", ""))
-    if cleaned in ("", "-", ".", "-."):
+def to_number(text):
+    """쉼표와 한글 단위가 포함된 값을 숫자로 바꿉니다."""
+    if text is None:
         return None
 
-    value = float(cleaned)
-    return int(value) if value.is_integer() else value
+    value = str(text).strip().replace(",", "").replace(" ", "")
+    value = value.replace("주", "").replace("원", "")
+
+    multipliers = [
+        ("조", 1_000_000_000_000),
+        ("백만", 1_000_000),
+        ("억", 100_000_000),
+        ("만", 10_000),
+        ("천", 1_000),
+    ]
+
+    for unit, multiplier in multipliers:
+        if value.endswith(unit):
+            number_part = value[: -len(unit)]
+            number_part = re.sub(r"[^0-9.+-]", "", number_part)
+            if not number_part:
+                return None
+            return float(number_part) * multiplier
+
+    cleaned = re.sub(r"[^0-9.+-]", "", value)
+    if cleaned in ("", "+", "-", ".", "+.", "-."):
+        return None
+
+    number = float(cleaned)
+    return int(number) if number.is_integer() else number
 
 
-def stock_code(link):
-    """네이버 종목 링크에서 6자리 종목코드를 꺼냅니다."""
-    href = link.get("href", "")
-    match = re.search(r"code=(\d{6})", href)
-    return match.group(1) if match else ""
+def build_driver():
+    options = Options()
+    options.add_argument("--headless=new")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--window-size=1920,2400")
+    options.add_argument("--lang=ko-KR")
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_argument(
+        "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/145.0.0.0 Safari/537.36"
+    )
+
+    chrome_driver = shutil.which("chromedriver")
+
+    if chrome_driver:
+        return webdriver.Chrome(
+            service=Service(chrome_driver),
+            options=options,
+        )
+
+    # GitHub 실행 환경에 ChromeDriver 경로가 따로 잡힌 경우
+    # Selenium Manager가 자동으로 찾아서 실행합니다.
+    return webdriver.Chrome(options=options)
 
 
-def group_order(table):
-    """
-    표의 왼쪽과 오른쪽이 순매수인지 순매도인지 자동 확인합니다.
-    반환 예: ["sell", "buy"]
-    """
-    order = []
+def wait_for_tables(driver):
+    """네이버의 자바스크립트 표가 화면에 나타날 때까지 기다립니다."""
+    def loaded(browser):
+        body_text = browser.find_element(By.TAG_NAME, "body").text
+        rows = browser.find_elements(By.CSS_SELECTOR, "table tbody tr")
+        return (
+            "순매수 상위" in body_text
+            and "순매도 상위" in body_text
+            and len(rows) >= 2
+        )
 
-    for row in table.find_all("tr")[:4]:
-        for cell in row.find_all(["th", "td"]):
-            text = cell.get_text(" ", strip=True)
-
-            if "순매도상위" in text and "sell" not in order:
-                order.append("sell")
-            elif "순매수상위" in text and "buy" not in order:
-                order.append("buy")
-
-    if len(order) != 2:
-        # 네이버 표의 일반적인 배치
-        return ["sell", "buy"]
-
-    return order
+    WebDriverWait(driver, 45).until(loaded)
+    time.sleep(3)
 
 
-def parse_group(cells, start, end):
-    """
-    한쪽 영역에서 종목명, 수량, 금액을 읽습니다.
-    네이버 표는 보통 '종목명 / 수량 / 금액' 순서입니다.
-    """
-    company_cell = None
+def find_heading(soup, title):
+    candidates = soup.find_all(
+        ["h1", "h2", "h3", "h4", "strong", "div", "span"]
+    )
 
-    for index in range(start, end):
-        if cells[index].select_one("a.company"):
-            company_cell = index
+    for tag in candidates:
+        text = " ".join(tag.get_text(" ", strip=True).split())
+        if text == title:
+            return tag
+
+    return None
+
+
+def stock_code_from_row(row):
+    for link in row.find_all("a", href=True):
+        href = link["href"]
+
+        patterns = [
+            r"/stock/(\d{6})",
+            r"/domestic/stock/(\d{6})",
+            r"[?&]code=(\d{6})",
+        ]
+
+        for pattern in patterns:
+            match = re.search(pattern, href)
+            if match:
+                return match.group(1)
+
+    return ""
+
+
+def parse_table(soup, title):
+    heading = find_heading(soup, title)
+
+    if heading is None:
+        raise RuntimeError(f"'{title}' 제목을 찾지 못했습니다.")
+
+    table = heading.find_next("table")
+
+    if table is None:
+        raise RuntimeError(f"'{title}' 아래의 표를 찾지 못했습니다.")
+
+    items = []
+
+    for row in table.find_all("tr"):
+        cells = row.find_all("td")
+
+        if not cells:
+            continue
+
+        stock_link = None
+        stock_cell_index = None
+
+        for index, cell in enumerate(cells):
+            links = cell.find_all("a", href=True)
+
+            for link in links:
+                href = link.get("href", "")
+                if (
+                    re.search(r"/(?:domestic/)?stock/\d{6}", href)
+                    or re.search(r"[?&]code=\d{6}", href)
+                ):
+                    stock_link = link
+                    stock_cell_index = index
+                    break
+
+            if stock_link:
+                break
+
+        # 링크 구조가 바뀐 경우 첫 번째 글자 셀을 종목명으로 사용합니다.
+        if stock_link:
+            name = " ".join(stock_link.get_text(" ", strip=True).split())
+        else:
+            name = ""
+            for index, cell in enumerate(cells):
+                text = " ".join(cell.get_text(" ", strip=True).split())
+                if text and not re.fullmatch(r"[\d,.\-+% ]+", text):
+                    name = text
+                    stock_cell_index = index
+                    break
+
+        if not name or stock_cell_index is None:
+            continue
+
+        numeric_values = []
+
+        for cell in cells[stock_cell_index + 1:]:
+            value = to_number(cell.get_text(" ", strip=True))
+            if value is not None:
+                numeric_values.append(value)
+
+        # 표의 열 순서: 수량 → 금액 → 총 거래량
+        if len(numeric_values) < 2:
+            continue
+
+        quantity = abs(numeric_values[0])
+        amount = abs(numeric_values[1])
+        total_volume = (
+            abs(numeric_values[2])
+            if len(numeric_values) >= 3
+            else None
+        )
+
+        items.append(
+            {
+                "name": name,
+                "code": stock_code_from_row(row),
+                "quantity": quantity,
+                "amount": amount,
+                "total_volume": total_volume,
+            }
+        )
+
+        if len(items) == 10:
             break
 
-    if company_cell is None:
-        return None
+    if not items:
+        raise RuntimeError(f"'{title}' 표에서 종목을 읽지 못했습니다.")
 
-    link = cells[company_cell].select_one("a.company")
-    name = link.get_text(" ", strip=True)
+    for rank, item in enumerate(items, start=1):
+        item["rank"] = rank
 
-    values = []
-    for index in range(company_cell + 1, end):
-        value = number(cells[index].get_text(" ", strip=True))
-        if value is not None:
-            values.append(value)
-
-    if not values:
-        return None
-
-    # 수량과 금액이 모두 있으면 마지막 값이 금액입니다.
-    amount = abs(values[-1])
-    quantity = abs(values[-2]) if len(values) >= 2 else None
-
-    return {
-        "name": name,
-        "code": stock_code(link),
-        "quantity": quantity,
-        "amount": amount,
-    }
+    return items
 
 
 def fetch_data():
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 Chrome/145 Safari/537.36"
-        ),
-        "Referer": "https://finance.naver.com/",
-    }
+    driver = build_driver()
 
-    response = requests.get(URL, headers=headers, timeout=30)
-    response.raise_for_status()
+    try:
+        driver.get(PAGE_URL)
+        wait_for_tables(driver)
 
-    # 네이버 금융의 한글 페이지는 EUC-KR/CP949 계열인 경우가 있습니다.
-    response.encoding = response.apparent_encoding or "euc-kr"
-    soup = BeautifulSoup(response.text, "html.parser")
+        html = driver.page_source
+        soup = BeautifulSoup(html, "html.parser")
 
-    target_table = None
+        buy = parse_table(soup, "순매수 상위")
+        sell = parse_table(soup, "순매도 상위")
 
-    for table in soup.find_all("table"):
-        text = table.get_text(" ", strip=True)
-        companies = table.select("a.company")
+        return {
+            "updated_at": datetime.now(KST).strftime(
+                "%Y-%m-%d %H:%M KST"
+            ),
+            "source": PAGE_URL,
+            "market": "KOSPI",
+            "period": "1일",
+            "unit": "네이버 표 표시 단위",
+            "buy": buy,
+            "sell": sell,
+        }
 
-        if (
-            "순매도상위" in text
-            and "순매수상위" in text
-            and len(companies) >= 10
-        ):
-            target_table = table
-            break
-
-    if target_table is None:
-        raise RuntimeError(
-            "네이버 표를 찾지 못했습니다. "
-            "네이버 페이지 구조가 변경되었을 가능성이 있습니다."
-        )
-
-    order = group_order(target_table)
-    result = {"buy": [], "sell": []}
-
-    for row in target_table.find_all("tr"):
-        cells = row.find_all("td")
-        company_positions = [
-            i for i, cell in enumerate(cells)
-            if cell.select_one("a.company")
-        ]
-
-        if len(company_positions) < 2:
-            continue
-
-        first_start = company_positions[0]
-        second_start = company_positions[1]
-
-        first = parse_group(cells, first_start, second_start)
-        second = parse_group(cells, second_start, len(cells))
-
-        if first:
-            result[order[0]].append(first)
-
-        if second:
-            result[order[1]].append(second)
-
-    result["buy"] = result["buy"][:10]
-    result["sell"] = result["sell"][:10]
-
-    if not result["buy"] or not result["sell"]:
-        raise RuntimeError(
-            "종목을 충분히 읽지 못했습니다. "
-            "Actions 실행 화면의 오류 내용을 확인해 주세요."
-        )
-
-    for key in ("buy", "sell"):
-        for rank, item in enumerate(result[key], start=1):
-            item["rank"] = rank
-
-    result["updated_at"] = datetime.now(KST).strftime("%Y-%m-%d %H:%M KST")
-    result["source"] = URL
-    result["unit"] = "네이버 표 표시 단위"
-
-    return result
+    finally:
+        driver.quit()
 
 
 def main():
@@ -181,7 +259,7 @@ def main():
         encoding="utf-8",
     )
 
-    print(f"저장 완료: {data['updated_at']}")
+    print("데이터 저장 완료:", data["updated_at"])
     print("순매수:", [item["name"] for item in data["buy"]])
     print("순매도:", [item["name"] for item in data["sell"]])
 
