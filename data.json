@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-08-13 17:15 KST",
+  "updated_at": "2026-08-14 17:10 KST",
   "source": "https://stock.naver.com/market/stock/kr/trend/foreigner?marketType=kospi&periodType=segment-1day&tradeType=0",
   "market": "KOSPI",
   "period": "1일",
@@ -8,162 +8,162 @@
     {
       "name": "관심종목에 추가 1 삼성전자",
       "code": "",
-      "quantity": 5963000.0,
-      "amount": 5963304,
+      "quantity": 6966000.0,
+      "amount": 6966027,
       "total_volume": null,
       "rank": 1
     },
     {
-      "name": "관심종목에 추가 2 팬오션",
+      "name": "관심종목에 추가 2 한화생명",
       "code": "",
-      "quantity": 1222000.0,
-      "amount": 1221829,
+      "quantity": 2695000.0,
+      "amount": 2695443,
       "total_volume": null,
       "rank": 2
     },
     {
-      "name": "관심종목에 추가 3 미래에셋증권",
+      "name": "관심종목에 추가 3 삼성전자우",
       "code": "",
-      "quantity": 890000.0,
-      "amount": 890255,
+      "quantity": 1545000.0,
+      "amount": 1545246,
       "total_volume": null,
       "rank": 3
     },
     {
-      "name": "관심종목에 추가 4 우리금융지주",
+      "name": "관심종목에 추가 4 금호타이어",
       "code": "",
-      "quantity": 878000.0,
-      "amount": 878479,
+      "quantity": 1378000.0,
+      "amount": 1377792,
       "total_volume": null,
       "rank": 4
     },
     {
-      "name": "관심종목에 추가 5 BNK금융지주",
+      "name": "관심종목에 추가 5 SK하이닉스",
       "code": "",
-      "quantity": 717000.0,
-      "amount": 716626,
+      "quantity": 1373000.0,
+      "amount": 1373153,
       "total_volume": null,
       "rank": 5
     },
     {
-      "name": "관심종목에 추가 6 삼성중공업",
+      "name": "관심종목에 추가 6 팬오션",
       "code": "",
-      "quantity": 714000.0,
-      "amount": 714062,
+      "quantity": 531000.0,
+      "amount": 530608,
       "total_volume": null,
       "rank": 6
     },
     {
-      "name": "관심종목에 추가 7 한화생명",
+      "name": "관심종목에 추가 7 BNK금융지주",
       "code": "",
-      "quantity": 639000.0,
-      "amount": 639302,
+      "quantity": 441000.0,
+      "amount": 441414,
       "total_volume": null,
       "rank": 7
     },
     {
-      "name": "관심종목에 추가 8 흥아해운",
+      "name": "관심종목에 추가 8 LG디스플레이",
       "code": "",
-      "quantity": 609000.0,
-      "amount": 609300,
+      "quantity": 436000.0,
+      "amount": 436023,
       "total_volume": null,
       "rank": 8
     },
     {
-      "name": "관심종목에 추가 9 SK하이닉스",
+      "name": "관심종목에 추가 9 흥아해운",
       "code": "",
-      "quantity": 497000.0,
-      "amount": 497376,
+      "quantity": 427000.0,
+      "amount": 426506,
       "total_volume": null,
       "rank": 9
     },
     {
-      "name": "관심종목에 추가 10 한국화장품제조",
+      "name": "관심종목에 추가 10 한화오션",
       "code": "",
-      "quantity": 426000.0,
-      "amount": 426101,
+      "quantity": 415000.0,
+      "amount": 414922,
       "total_volume": null,
       "rank": 10
     }
   ],
   "sell": [
     {
-      "name": "관심종목에 추가 1 LG디스플레이",
+      "name": "관심종목에 추가 1 삼성중공업",
       "code": "",
-      "quantity": 2537000.0,
-      "amount": 2537072,
+      "quantity": 325000.0,
+      "amount": 325294,
       "total_volume": null,
       "rank": 1
     },
     {
-      "name": "관심종목에 추가 2 한국전력",
+      "name": "관심종목에 추가 2 한온시스템",
       "code": "",
-      "quantity": 1530000.0,
-      "amount": 1530398,
+      "quantity": 285000.0,
+      "amount": 284647,
       "total_volume": null,
       "rank": 2
     },
     {
-      "name": "관심종목에 추가 3 맥쿼리인프라",
+      "name": "관심종목에 추가 3 자이에스앤디",
       "code": "",
-      "quantity": 965000.0,
-      "amount": 965239,
+      "quantity": 239000.0,
+      "amount": 238763,
       "total_volume": null,
       "rank": 3
     },
     {
-      "name": "관심종목에 추가 4 대우건설",
+      "name": "관심종목에 추가 4 SK텔레콤",
       "code": "",
-      "quantity": 584000.0,
-      "amount": 584272,
+      "quantity": 232000.0,
+      "amount": 232005,
       "total_volume": null,
       "rank": 4
     },
     {
-      "name": "관심종목에 추가 5 삼성전자우",
+      "name": "관심종목에 추가 5 SK네트웍스",
       "code": "",
-      "quantity": 311000.0,
-      "amount": 311391,
+      "quantity": 200000.0,
+      "amount": 200353,
       "total_volume": null,
       "rank": 5
     },
     {
-      "name": "관심종목에 추가 6 유진투자증권",
+      "name": "관심종목에 추가 6 모나미",
       "code": "",
-      "quantity": 266000.0,
-      "amount": 266291,
+      "quantity": 193000.0,
+      "amount": 193339,
       "total_volume": null,
       "rank": 6
     },
     {
-      "name": "관심종목에 추가 7 기업은행",
+      "name": "관심종목에 추가 7 GS",
       "code": "",
-      "quantity": 226000.0,
-      "amount": 226238,
+      "quantity": 189000.0,
+      "amount": 189125,
       "total_volume": null,
       "rank": 7
     },
     {
-      "name": "관심종목에 추가 8 비에이치",
+      "name": "관심종목에 추가 8 대한전선",
       "code": "",
-      "quantity": 226000.0,
-      "amount": 226206,
+      "quantity": 178000.0,
+      "amount": 178374,
       "total_volume": null,
       "rank": 8
     },
     {
-      "name": "관심종목에 추가 9 두산퓨얼셀",
+      "name": "관심종목에 추가 9 SK이터닉스",
       "code": "",
-      "quantity": 200000.0,
-      "amount": 199762,
+      "quantity": 167000.0,
+      "amount": 167027,
       "total_volume": null,
       "rank": 9
     },
     {
-      "name": "관심종목에 추가 10 삼성E&A",
+      "name": "관심종목에 추가 10 한화엔진",
       "code": "",
-      "quantity": 169000.0,
-      "amount": 169231,
+      "quantity": 149000.0,
+      "amount": 148828,
       "total_volume": null,
       "rank": 10
     }
