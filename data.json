@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-03 23:48 KST",
+  "updated_at": "2026-11-05 00:00 KST",
   "source": "https://stock.naver.com/market/stock/kr/trend/foreigner?marketType=kospi&periodType=segment-1day&tradeType=0",
   "market": "KOSPI",
   "period": "1일",
@@ -74,7 +74,7 @@
       "code": "",
       "quantity": 793000.0,
       "amount": 7094000000.0,
-      "total_volume": 6424530,
+      "total_volume": 6476130,
       "rank": 9
     },
     {
@@ -92,7 +92,7 @@
       "code": "",
       "quantity": 455000.0,
       "amount": 635883000000.0,
-      "total_volume": 2302839,
+      "total_volume": 2304051,
       "rank": 1
     },
     {
@@ -100,7 +100,7 @@
       "code": "",
       "quantity": 954000.0,
       "amount": 208711000000.0,
-      "total_volume": 13389433,
+      "total_volume": 13391670,
       "rank": 2
     },
     {
@@ -116,7 +116,7 @@
       "code": "",
       "quantity": 156000.0,
       "amount": 78918000000.0,
-      "total_volume": 774580,
+      "total_volume": 778863,
       "rank": 4
     },
     {
@@ -124,7 +124,7 @@
       "code": "",
       "quantity": 44000.0,
       "amount": 39136000000.0,
-      "total_volume": 473468,
+      "total_volume": 473988,
       "rank": 5
     },
     {
@@ -132,7 +132,7 @@
       "code": "",
       "quantity": 358000.0,
       "amount": 32173000000.0,
-      "total_volume": 22290181,
+      "total_volume": 22746346,
       "rank": 6
     },
     {
